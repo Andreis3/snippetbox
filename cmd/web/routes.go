@@ -13,9 +13,16 @@ func (app *application) routes() http.Handler {
 	// Create a middleware chain containing our 'standard' middleware
 	// which will be used for every request our application receives.
 	standartMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+
+	// Create a new middleware chain containing the middleware specific to
+	// our dynamic application routes. For now, this chain will only contain
+	// the session middleware but we'll add more to it later.
+	dynamicMiddleware := alice.New(app.session.Enable)
 	mux := pat.New()
 
-	mux.Get("/", http.HandlerFunc(app.home))
+	// Update these routes to use the new dynamic middleware chain followed
+	// by the appropriate handler function.
+	mux.Get("/", dynamicMiddleware.ThenFunc(app.home))
 	mux.Get("/snippet/create", http.HandlerFunc(app.createSnippetForm))
 	mux.Post("/snippet/create", http.HandlerFunc(app.createSnippet))
 	mux.Get("/snippet/:id", http.HandlerFunc(app.showSnippet))
